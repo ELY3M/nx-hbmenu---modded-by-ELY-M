@@ -15,3 +15,7 @@ build
 test.*
 switch
 nx-hbmenu*
+!themes
+/!themes
+/!themes/
+settings.cfg

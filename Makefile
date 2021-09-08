@@ -1,4 +1,4 @@
-export APP_VERSION	:=	3.4.0-elys-mod
+export APP_VERSION	:=	3.4.1-elys-mod
 
 ifeq ($(RELEASE),)
 	export APP_VERSION	:=	$(APP_VERSION)-$(shell git describe --dirty --always)
