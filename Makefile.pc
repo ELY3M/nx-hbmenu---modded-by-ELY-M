@@ -14,7 +14,11 @@ test : pc_main/main.cpp pc_main/pc_launch.c pc_main/pc_power.c pc_main/pc_netsta
 	common/menu-entry.c common/menu-list.c common/message-box.c common/text.c \
 	common/ui.c common/assets.c common/math.c common/theme.c \
 	common/netloader.c
+<<<<<<< HEAD
 	gcc -Wall -O2 -g -DVERSION=\"v$(APP_VERSION)\" $(EXTRA_CFLAGS)  `pkg-config freetype2 --cflags` $^ -lsfml-graphics -lsfml-window -lsfml-system -lstdc++ -lpthread `pkg-config freetype2 --libs` -lm -lphysfs -lz -lconfig -lturbojpeg -lpng $(EXTRA_LDFLAGS) -I. -iquote $(DEVKITPRO)/libnx/include -Ibuild_pc -g -o $@
+=======
+	gcc -Wall -O2 -g -DVERSION=\"v$(APP_VERSION)\" $(EXTRA_CFLAGS)  `pkg-config freetype2 --cflags` $^ -lsfml-graphics -lsfml-window -lsfml-system -lstdc++ -lpthread `pkg-config freetype2 --libs` -lm -lminizip -lz -lconfig -lturbojpeg -lpng $(EXTRA_LDFLAGS) -I. -iquote $(DEVKITPRO)/libnx/include -Ibuild_pc -g -o $@
+>>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
 
 clean:
 	rm -rf build_pc/ test test.*

@@ -262,7 +262,11 @@ int themeMenuScan(const char* target) {
         #endif
 
         const char* ext = getExtension(dp->d_name);
+<<<<<<< HEAD
         if (entrytype || strcasecmp(ext, ".cfg")==0 || strcasecmp(ext, ".romfs")==0 || strcasecmp(ext, ".zip")==0)
+=======
+        if (strcasecmp(ext, ".cfg")==0 || strcasecmp(ext, ".romfs")==0)
+>>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
             me = menuCreateEntry(ENTRY_TYPE_THEME);
 
         if (!me)
