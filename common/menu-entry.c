@@ -1,4 +1,5 @@
 #include "common.h"
+#include <physfs.h>
 
 void menuEntryInit(menuEntry_s* me, MenuEntryType type) {
     memset(me, 0, sizeof(*me));
@@ -80,8 +81,12 @@ static bool menuEntryLoadEmbeddedIcon(menuEntry_s* me) {
     return ok;
 }
 
-static bool menuEntryLoadExternalIcon(menuEntry_s* me, const char* path) {
+static bool menuEntryLoadExternalIcon(menuEntry_s* me, const char* path, bool data_source) {
     struct stat st;
+
+    if (data_source) {
+        return assetsPhysfsReadFile(path, &me->icon, &me->icon_size, false);
+    }
 
     if(stat(path, &st)==-1) return false;
 
@@ -106,12 +111,15 @@ static bool menuEntryImportIconGfx(menuEntry_s* me, uint8_t* icon_gfx, uint8_t* 
 
     if (icon_gfx == NULL || icon_gfx_small == NULL) return false;
 
-    tmpsize = 256*256*3;
+    ThemeLayoutObject *layoutobj = &themeCurrent.layoutObjects[ThemeLayoutId_MenuActiveEntryIcon];
+    ThemeLayoutObject *layoutobj2 = &themeCurrent.layoutObjects[ThemeLayoutId_MenuListIcon];
+
+    tmpsize = layoutobj->size[0]*layoutobj->size[1]*3;
     me->icon_gfx = (uint8_t*)malloc(tmpsize);
     if (me->icon_gfx) memcpy(me->icon_gfx, icon_gfx, tmpsize);
 
     if (me->icon_gfx) {
-        tmpsize = 140*140*3;
+        tmpsize = layoutobj2->size[0]*layoutobj2->size[1]*3;
         me->icon_gfx_small = (uint8_t*)malloc(tmpsize);
         if (me->icon_gfx_small) memcpy(me->icon_gfx_small, icon_gfx_small, tmpsize);
 
@@ -202,19 +210,19 @@ static bool menuEntryLoadExternalNacp(menuEntry_s* me, const char* path) {
     } while (lastc);
 }*/
 
-bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
+bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut, bool check_exists) {
     int i=0, tmplen;
     menu_s *menu_fileassoc = menuFileassocGetCurrent();
     menuEntry_s* fileassoc_me = NULL;
     char *strptr = NULL;
-    static char tempbuf[PATH_MAX+1];
+    char tempbuf[PATH_MAX+16];
     //bool isOldAppFolder = false;
 
-    if (!fsobjExists(me->path)) return false;
+    if (check_exists && !fsobjExists(me->path)) return false;
 
     tempbuf[PATH_MAX] = 0;
-    strcpy(me->name, name);
-    
+    strncpy(me->name, name, sizeof(me->name)-1);
+
     if (me->type == ENTRY_TYPE_FOLDER)
     {
         //Check for <dirpath>/<dirname>.nro
@@ -285,9 +293,8 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
 
     if (me->type == ENTRY_TYPE_FILE)
     {
-        //strcpy(me->name, name);//This is already done before both if statements
-        strcpy(me->author, textGetString(StrId_DefaultPublisher));
-        strcpy(me->version, "1.0.0");
+        strncpy(me->author, textGetString(StrId_DefaultPublisher), sizeof(me->author)-1);
+        strncpy(me->version, "1.0.0", sizeof(me->version)-1);
 
         //shortcut_s sc;
 
@@ -324,7 +331,7 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
             char* ext = getExtension(tempbuf);
 
             strcpy(ext, ".jpg");
-            iconLoaded = menuEntryLoadExternalIcon(me, tempbuf);
+            iconLoaded = menuEntryLoadExternalIcon(me, tempbuf, false);
             if (iconLoaded) break;
 
             if (isOldAppFolder)
@@ -332,7 +339,7 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
                 char* slash = getSlash(tempbuf);
 
                 strcpy(slash, "/icon.jpg");
-                iconLoaded = menuEntryLoadExternalIcon(me, tempbuf);
+                iconLoaded = menuEntryLoadExternalIcon(me, tempbuf, false);
                 if (iconLoaded) break;
             }*/
 
@@ -404,8 +411,45 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
         const char *name,
                    *author = textGetString(StrId_DefaultPublisher),
                    *version = "1.0.0";
-                   
-        if (config_read_file(&cfg, me->path)) {
+
+        const char* cfg_path = me->path;
+        const char* theme_archive_path = NULL;
+        const char* ext = getExtension(me->path);
+        bool good_cfg = false;
+        bool is_archive = false;
+        #ifdef __SWITCH__
+        bool is_romfs = false;
+        if (strcasecmp(ext, ".romfs")==0) {
+            if (R_FAILED(romfsMountFromFsdev(me->path, 0, "themetmp")))
+                return false;
+            is_romfs = true;
+            cfg_path = "themetmp:/theme.cfg";
+            theme_archive_path = "themetmp:/";
+        }
+        #endif
+
+        if (strcasecmp(ext, ".romfs")!=0 && strcasecmp(ext, ".cfg")!=0) {
+            theme_archive_path = me->path;
+        }
+        if (theme_archive_path) {
+            if (!PHYSFS_mount(theme_archive_path, "themetmp", 0)) cfg_path = NULL;
+            else {
+                is_archive = true;
+                cfg_path = "themetmp/theme.cfg";
+            }
+        }
+
+        if (cfg_path) {
+            if (!is_archive) good_cfg = config_read_file(&cfg, cfg_path);
+            else {
+                u8 *cfg_buf = NULL;
+                good_cfg = assetsPhysfsReadFile(cfg_path, &cfg_buf, NULL, true);
+                if (good_cfg) good_cfg = config_read_string(&cfg, (char*)cfg_buf);
+                free(cfg_buf);
+            }
+        }
+
+        if (good_cfg) {
             themeInfo = config_lookup(&cfg, "themeInfo");
             if (themeInfo != NULL) {
                 if(config_setting_lookup_string(themeInfo, "name", &name))
@@ -418,6 +462,20 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
         strncpy(me->author, author, sizeof(me->author)-1);
         strncpy(me->version, version, sizeof(me->version)-1);
         config_destroy(&cfg);
+
+        if (good_cfg && is_archive) {
+            bool iconLoaded = false;
+
+            iconLoaded = menuEntryLoadExternalIcon(me, "themetmp/icon.jpg", true);
+
+            if (iconLoaded) menuEntryParseIcon(me);
+        }
+
+        if (is_archive) PHYSFS_unmount(theme_archive_path);
+
+        #ifdef __SWITCH__
+        if (is_romfs) romfsUnmount("themetmp");
+        #endif
     }
 
     if (me->type == ENTRY_TYPE_FILE_OTHER)
@@ -449,7 +507,7 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
 
             bool iconLoaded = false;
 
-            iconLoaded = menuEntryLoadExternalIcon(me, tempbuf);
+            iconLoaded = menuEntryLoadExternalIcon(me, tempbuf, false);
 
             if (iconLoaded) menuEntryParseIcon(me);
 
@@ -478,9 +536,28 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
 
             // Initialize the argument data
             argData_s* ad = &me->args;
+            argData_s* ad_assoc = &fileassoc_me->args;
+            char *arg_src = (char*)&ad_assoc->buf[1];
+            bool ftoken_found=0;
             ad->dst = (char*)&ad->buf[1];
-            launchAddArg(ad, fileassoc_me->path);
-            launchAddArg(ad, me->path);
+
+            for (u32 argi=0; argi<ad_assoc->buf[0]; argi++, arg_src+= strlen(arg_src)+1) {
+                if (argi) {
+                    strptr = strchr(arg_src, '%');
+                    if (strptr && strptr[0] && strptr[1] && (strptr == arg_src || strptr[-1] != '\\')) {
+                        if (strptr[1] == 'f') {
+                            memset(tempbuf, 0, sizeof(tempbuf));
+                            snprintf(tempbuf, sizeof(tempbuf)-1, "%.*s%s%s", (int)((uintptr_t)strptr-(uintptr_t)arg_src), arg_src, me->path, &strptr[2]);
+                            launchAddArg(ad, tempbuf);
+                            ftoken_found = 1;
+                            continue;
+                        }
+                    }
+                }
+
+                launchAddArg(ad, arg_src);
+            }
+            if (!ftoken_found) launchAddArg(ad, me->path);
 
             strncpy(me->path, fileassoc_me->path, sizeof(me->path));
             me->path[sizeof(me->path)-1] = 0;
@@ -501,12 +578,12 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut) {
 }
 
 void menuEntryFileassocLoad(const char* filepath) {
-    bool success=0, success2=0;
+    bool success=0, iconLoaded=0;
     menuEntry_s* me = NULL;
 
-    config_setting_t *fileassoc = NULL, *targets = NULL, *target = NULL;
+    config_setting_t *fileassoc = NULL, *targets = NULL, *target = NULL, *app_args = NULL, *target_args = NULL;
     config_t cfg = {0};
-    int targets_len=0, i;
+    int targets_len=0, args_len=0, i;
     const char *strptr = NULL;
 
     char app_path[PATH_MAX+8];
@@ -515,8 +592,8 @@ void menuEntryFileassocLoad(const char* filepath) {
     char target_file_extension[PATH_MAX+1];
     char target_filename[PATH_MAX+1];
 
-    char app_author[ENTRY_AUTHORLENGTH+1];
-    char app_version[ENTRY_VERLENGTH+1];
+    char app_author[ENTRY_AUTHORLENGTH+2];
+    char app_version[ENTRY_VERLENGTH+2];
 
     uint8_t *app_icon_gfx = NULL;
     uint8_t *app_icon_gfx_small = NULL;
@@ -538,7 +615,8 @@ void menuEntryFileassocLoad(const char* filepath) {
                 snprintf(app_path, sizeof(app_path)-1, "%s%s", menuGetRootBasePath(), strptr);
             if (config_setting_lookup_string(fileassoc, "icon_path", &strptr))
                 snprintf(main_icon_path, sizeof(main_icon_path)-1, "%s%s", menuGetRootBasePath(), strptr);
-            targets = config_setting_get_member(fileassoc, "targets");
+            app_args = config_setting_lookup(fileassoc, "app_args");
+            targets = config_setting_lookup(fileassoc, "targets");
 
             if (app_path[0] && targets) {
                 targets_len = config_setting_length(targets);
@@ -554,7 +632,7 @@ void menuEntryFileassocLoad(const char* filepath) {
                         strptr = getSlash(app_path);
                         if(strptr[0] == '/') strptr++;
 
-                        if (menuEntryLoad(me, strptr, 0)) {
+                        if (menuEntryLoad(me, strptr, 0, true)) {
                             strncpy(app_author, me->author, sizeof(app_author));
                             app_author[sizeof(app_author)-1] = 0;
                             strncpy(app_version, me->version, sizeof(app_version));
@@ -584,12 +662,13 @@ void menuEntryFileassocLoad(const char* filepath) {
                                 strncpy(target_file_extension, strptr, sizeof(target_file_extension)-1);
                             if (config_setting_lookup_string(target, "filename", &strptr))
                                 strncpy(target_filename, strptr, sizeof(target_filename)-1);
+                            target_args = config_setting_lookup(target, "app_args");
 
                             //string_is_set for target_file_extension and target_filename must differ: only 1 can be set, not both set or both not set.
                             if ((target_file_extension[0]!=0) == (target_filename[0]!=0)) continue;
 
                             me = menuCreateEntry(ENTRY_TYPE_FILEASSOC);
-                            success2 = 0;
+                            iconLoaded = 0;
 
                             if (me) {
                                 strncpy(me->path, app_path, sizeof(me->path));
@@ -608,22 +687,32 @@ void menuEntryFileassocLoad(const char* filepath) {
                                 }
                                 me->fileassoc_str[sizeof(me->fileassoc_str)-1] = 0;
 
-                                if (target_icon_path[0]) success2 = menuEntryLoadExternalIcon(me, target_icon_path);
-                                if (!success2 && main_icon_path[0]) success2 = menuEntryLoadExternalIcon(me, main_icon_path);
+                                if (target_icon_path[0]) iconLoaded = menuEntryLoadExternalIcon(me, target_icon_path, false);
+                                if (!iconLoaded && main_icon_path[0]) iconLoaded = menuEntryLoadExternalIcon(me, main_icon_path, false);
 
-                                if (success2) {
+                                if (iconLoaded) {
                                     menuEntryParseIcon(me);
                                 } else {
-                                    success2 = menuEntryImportIconGfx(me, app_icon_gfx, app_icon_gfx_small);
+                                    iconLoaded = menuEntryImportIconGfx(me, app_icon_gfx, app_icon_gfx_small);
+                                }
+
+                                argData_s* ad = &me->args;
+                                ad->dst = (char*)&ad->buf[1];
+                                launchAddArg(ad, me->path);
+
+                                config_setting_t *config_args = target_args ? target_args : app_args;
+                                if (config_args) {
+                                    args_len = config_setting_length(config_args);
+                                    for (int argi=0; argi<args_len; argi++) {
+                                        strptr = config_setting_get_string_elem(config_args, argi);
+                                        if (strptr==NULL) continue;
+
+                                        launchAddArg(ad, strptr);
+                                    }
                                 }
                             }
 
-                            if (me) {
-                                if (success2)
-                                    menuFileassocAddEntry(me);
-                                else
-                                    menuDeleteEntry(me, 0);
-                            }
+                            if (me) menuFileassocAddEntry(me);
                         }
                     }
                 }
@@ -642,65 +731,33 @@ void menuEntryFileassocLoad(const char* filepath) {
 void menuEntryParseIcon(menuEntry_s* me) {
     if (me->icon_size==0 || me->icon==NULL) return;
 
-    int w,h,samp;
-    size_t imagesize = 256*256*3;
-    me->icon_gfx = (uint8_t*)malloc(imagesize);
+    ThemeLayoutObject *layoutobj = &themeCurrent.layoutObjects[ThemeLayoutId_MenuActiveEntryIcon];
+    ThemeLayoutObject *layoutobj2 = &themeCurrent.layoutObjects[ThemeLayoutId_MenuListIcon];
 
-    if (me->icon_gfx == NULL) {
-        me->icon_size = 0;
-        free(me->icon);
-        me->icon = NULL;
-        return;
-    }
+    size_t imagesize = layoutobj->imageSize[0]*layoutobj->imageSize[1]*3;
+    bool ret=true;
+    uint8_t *tmp_gfx = (uint8_t*)malloc(imagesize);
 
-    tjhandle _jpegDecompressor = tjInitDecompress();
+    if (tmp_gfx == NULL) ret = false;
 
-    if (_jpegDecompressor == NULL) {
-        free(me->icon_gfx);
-        me->icon_gfx = NULL;
+    if (ret) ret = assetsLoadJpgFromMemory(me->icon, me->icon_size, tmp_gfx, IMAGE_MODE_RGB24, layoutobj->imageSize[0], layoutobj->imageSize[1]);
 
-        me->icon_size = 0;
-        free(me->icon);
-        me->icon = NULL;
-        return;
-    }
+    if (ret) me->icon_gfx = downscaleImg(tmp_gfx, layoutobj->imageSize[0], layoutobj->imageSize[1], layoutobj->size[0], layoutobj->size[1], IMAGE_MODE_RGB24);
 
-    if (tjDecompressHeader2(_jpegDecompressor, me->icon, me->icon_size, &w, &h, &samp) == -1) {
-        free(me->icon_gfx);
-        me->icon_gfx = NULL;
-
-        me->icon_size = 0;
-        free(me->icon);
-        me->icon = NULL;
-        tjDestroy(_jpegDecompressor);
-        return;
-    }
-
-    if (w != 256 || h != 256 ) return;
-
-    if (tjDecompress2(_jpegDecompressor, me->icon, me->icon_size, me->icon_gfx, w, 0, h, TJPF_RGB, TJFLAG_ACCURATEDCT) == -1) {
-        free(me->icon_gfx);
-        me->icon_gfx = NULL;
-
-        me->icon_size = 0;
-        free(me->icon);
-        me->icon = NULL;
-        tjDestroy(_jpegDecompressor);
-        return;
-    }
+    if (ret && me->icon_gfx==NULL) ret = false;
 
     me->icon_size = 0;
     free(me->icon);
     me->icon = NULL;
 
-    tjDestroy(_jpegDecompressor);
+    if (ret) me->icon_gfx_small = downscaleImg(tmp_gfx, layoutobj->imageSize[0], layoutobj->imageSize[1], layoutobj2->size[0], layoutobj2->size[1], IMAGE_MODE_RGB24);
 
-    me->icon_gfx_small = downscaleImg(me->icon_gfx, 256, 256, 140, 140, IMAGE_MODE_RGB24);
-
-    if (me->icon_gfx_small == NULL) {
+    if (!ret || me->icon_gfx_small == NULL) {
         free(me->icon_gfx);
         me->icon_gfx = NULL;
     }
+
+    free(tmp_gfx);
 }
 
 uint8_t *downscaleImg(const uint8_t *image, int srcWidth, int srcHeight, int destWidth, int destHeight, ImageMode mode) {
@@ -718,6 +775,11 @@ uint8_t *downscaleImg(const uint8_t *image, int srcWidth, int srcHeight, int des
 
     if (out == NULL) {
         return NULL;
+    }
+
+    if (srcWidth == destWidth && srcHeight == destHeight) {
+        memcpy(out, image, destWidth*destHeight*(mode==IMAGE_MODE_RGBA32 ? 4 : 3));
+        return out;
     }
 
     int tmpx, tmpy;
@@ -826,7 +888,7 @@ void menuEntryParseNacp(menuEntry_s* me) {
 
     if (me->nacp==NULL) return;
 
-    strncpy(me->version, me->nacp->version, sizeof(me->version)-1);
+    strncpy(me->version, me->nacp->display_version, sizeof(me->version)-1);
 
     #ifdef __SWITCH__
     Result rc=0;

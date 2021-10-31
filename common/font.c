@@ -9,16 +9,20 @@
 #define FONT_FACES_MAX 2
 #endif
 
+#ifdef __SWITCH__
+static bool s_plinited;
+#endif
+
 static FT_Error s_font_libret=1, s_font_facesret[FONT_FACES_MAX];
 
 static FT_Library s_font_library;
 static FT_Face s_font_faces[FONT_FACES_MAX];
 static FT_Face s_font_lastusedface;
-static size_t s_font_faces_total = 0;
+static s32 s_font_faces_total = 0;
 
 static bool FontSetType(u32 font)
 {
-    u32 i=0;
+    s32 i=0;
     u32 scale=0;
     FT_Error ret=0;
 
@@ -80,12 +84,12 @@ static bool FontSetType(u32 font)
 
 static inline bool FontLoadGlyph(glyph_t* glyph, u32 font, uint32_t codepoint)
 {
-    FT_Face face;
+    FT_Face face=0;
     FT_Error ret=0;
     FT_GlyphSlot slot;
     FT_UInt glyph_index;
     FT_Bitmap* bitmap;
-    u32 i=0;
+    s32 i=0;
 
     //__builtin_printf("LoadGlyph %u\n", (unsigned int)codepoint);
     /*const ffnt_page_t* page = FontGetPage(font, codepoint >> 8);
@@ -276,6 +280,38 @@ void DrawText(u32 font, uint32_t x, uint32_t y, color_t clr, const char* text)
     DrawText_(font, x, y, clr, text, 0, NULL);
 }
 
+void DrawTextFromLayout(ThemeLayoutId id, color_t clr, const char* text)
+{
+    ThemeLayoutObject *obj = &themeCurrent.layoutObjects[id];
+    if (!obj->visible) return;
+
+    DrawText(obj->font, obj->posStart[0], obj->posStart[1], clr, text);
+}
+
+void DrawTextFromLayoutRelative(ThemeLayoutId id, int base_x, int base_y, int *inPos, int *outPos, color_t clr, const char* text, const char align)
+{
+    ThemeLayoutObject *obj = &themeCurrent.layoutObjects[id];
+
+    base_x = obj->posType ? base_x + inPos[0] : inPos[0];
+    base_y = obj->posType ? base_y + inPos[1] : inPos[1];
+
+    base_x = GetTextXCoordinate(obj->font, base_x, text, align);
+
+    if (outPos) {
+        outPos[0] = base_x;
+        outPos[1] = base_y;
+    }
+
+    obj->posFinal[0] = base_x;
+    obj->posFinal[1] = base_y;
+
+    if (!obj->visible) return;
+
+    GetTextDimensions(obj->font, text, &obj->textSize[0], &obj->textSize[1]);
+
+    DrawText(obj->font, base_x, base_y, clr, text);
+}
+
 void DrawTextTruncate(u32 font, uint32_t x, uint32_t y, color_t clr, const char* text, uint32_t max_width, const char* end_text)
 {
     DrawText_(font, x, y, clr, text, max_width, end_text);
@@ -320,7 +356,7 @@ void GetTextDimensions(u32 font, const char* text, uint32_t* width_out, uint32_t
 bool fontInitialize(void)
 {
     FT_Error ret=0;
-    u32 i;
+    s32 i;
 
     for (i=0; i<FONT_FACES_MAX; i++) s_font_facesret[i] = 1;
 
@@ -332,7 +368,11 @@ bool fontInitialize(void)
     PlFontData fonts[PlSharedFontType_Total];
 
     Result rc=0;
-    rc = plGetSharedFont(textGetLanguageCode(), fonts, FONT_FACES_MAX, &s_font_faces_total);
+    rc = plInitialize(PlServiceType_User);
+    if (R_SUCCEEDED(rc)) {
+        s_plinited = true;
+        rc = plGetSharedFont(textGetLanguageCode(), fonts, FONT_FACES_MAX, &s_font_faces_total);
+    }
     if (R_FAILED(rc)) return false;
 
     for (i=0; i<s_font_faces_total; i++) {
@@ -372,12 +412,16 @@ bool fontInitialize(void)
 
 void fontExit()
 {
-    u32 i=0;
+    s32 i=0;
 
     for (i=0; i<s_font_faces_total; i++)
         if (s_font_facesret[i]==0) FT_Done_Face(s_font_faces[i]);
 
     if (s_font_libret==0) FT_Done_FreeType(s_font_library);
+
+    #ifdef __SWITCH__
+    if (s_plinited) plExit();
+    #endif
 }
 
 /*Automatically gives you the desired x-coordinate

@@ -1,3 +1,4 @@
+.*/
 *~
 *.exe
 *.o
@@ -13,3 +14,8 @@ build
 *.nro
 test.*
 switch
+nx-hbmenu*
+!themes
+/!themes
+/!themes/
+settings.cfg

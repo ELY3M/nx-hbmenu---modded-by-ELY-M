@@ -33,6 +33,7 @@ struct menu_s_tag
     int nEntries;
     int curEntry;
     int xPos;
+    int slideSpeed;
 
     char dirname[PATH_MAX+1];
 };
@@ -77,7 +78,7 @@ typedef enum
     IMAGE_MODE_RGBA32
 } ImageMode;
 
-double menuTimer;
+extern double menuTimer;
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,7 +87,7 @@ extern "C" {
 void menuEntryInit(menuEntry_s* me, MenuEntryType type);
 void menuEntryFree(menuEntry_s* me, bool skip_icongfx);
 bool fileExists(const char* path);
-bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut);
+bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut, bool check_exists);
 void menuEntryParseIcon(menuEntry_s* me);
 uint8_t *downscaleImg(const uint8_t *image, int srcWidth, int srcHeight, int destWidth, int destHeight, ImageMode mode);
 void menuEntryParseNacp(menuEntry_s* me);
