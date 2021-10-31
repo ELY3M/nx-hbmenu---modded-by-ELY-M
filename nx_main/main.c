@@ -197,10 +197,7 @@ int main(int argc, char **argv)
     netloaderExit();
     powerExit();
     assetsExit();
-<<<<<<< HEAD
     PHYSFS_deinit();
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
 
     appletUnlockExit();
 

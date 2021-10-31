@@ -35,12 +35,8 @@ typedef struct {
 Result assetsInit(void);
 void assetsExit(void);
 void assetsClearTheme(void);
-<<<<<<< HEAD
 bool assetsPhysfsReadFile(const char *path, u8 **data_buf, size_t *filesize, bool nul_term);
 bool assetsLoadData(AssetId id, const char *path, int *imageSize);
-=======
-bool assetsLoadFromTheme(AssetId id, const char *path, int *imageSize);
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
 void assetsGetData(AssetId id, assetsDataEntry **out);
 u8 *assetsGetDataBuffer(AssetId id);
 

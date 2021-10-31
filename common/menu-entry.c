@@ -413,23 +413,17 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut, bool check_
                    *version = "1.0.0";
 
         const char* cfg_path = me->path;
-<<<<<<< HEAD
         const char* theme_archive_path = NULL;
         const char* ext = getExtension(me->path);
         bool good_cfg = false;
         bool is_archive = false;
         #ifdef __SWITCH__
-=======
-        #ifdef __SWITCH__
-        const char* ext = getExtension(me->path);
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
         bool is_romfs = false;
         if (strcasecmp(ext, ".romfs")==0) {
             if (R_FAILED(romfsMountFromFsdev(me->path, 0, "themetmp")))
                 return false;
             is_romfs = true;
             cfg_path = "themetmp:/theme.cfg";
-<<<<<<< HEAD
             theme_archive_path = "themetmp:/";
         }
         #endif
@@ -456,12 +450,6 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut, bool check_
         }
 
         if (good_cfg) {
-=======
-        }
-        #endif
-
-        if (config_read_file(&cfg, cfg_path)) {
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
             themeInfo = config_lookup(&cfg, "themeInfo");
             if (themeInfo != NULL) {
                 if(config_setting_lookup_string(themeInfo, "name", &name))
@@ -475,28 +463,17 @@ bool menuEntryLoad(menuEntry_s* me, const char* name, bool shortcut, bool check_
         strncpy(me->version, version, sizeof(me->version)-1);
         config_destroy(&cfg);
 
-<<<<<<< HEAD
         if (good_cfg && is_archive) {
             bool iconLoaded = false;
 
             iconLoaded = menuEntryLoadExternalIcon(me, "themetmp/icon.jpg", true);
-=======
-        #ifdef __SWITCH__
-        if (is_romfs) {
-            bool iconLoaded = false;
-
-            iconLoaded = menuEntryLoadExternalIcon(me, "themetmp:/icon.jpg");
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
 
             if (iconLoaded) menuEntryParseIcon(me);
         }
 
-<<<<<<< HEAD
         if (is_archive) PHYSFS_unmount(theme_archive_path);
 
         #ifdef __SWITCH__
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
         if (is_romfs) romfsUnmount("themetmp");
         #endif
     }
@@ -710,13 +687,8 @@ void menuEntryFileassocLoad(const char* filepath) {
                                 }
                                 me->fileassoc_str[sizeof(me->fileassoc_str)-1] = 0;
 
-<<<<<<< HEAD
                                 if (target_icon_path[0]) iconLoaded = menuEntryLoadExternalIcon(me, target_icon_path, false);
                                 if (!iconLoaded && main_icon_path[0]) iconLoaded = menuEntryLoadExternalIcon(me, main_icon_path, false);
-=======
-                                if (target_icon_path[0]) iconLoaded = menuEntryLoadExternalIcon(me, target_icon_path);
-                                if (!iconLoaded && main_icon_path[0]) iconLoaded = menuEntryLoadExternalIcon(me, main_icon_path);
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
 
                                 if (iconLoaded) {
                                     menuEntryParseIcon(me);

@@ -84,15 +84,9 @@ bool assetObjectFromSetting(config_setting_t *asset_setting, AssetId id, ThemeLa
         return false;
 
     memset(tmp_path, 0, sizeof(tmp_path));
-<<<<<<< HEAD
     snprintf(tmp_path, sizeof(tmp_path)-1, "theme/%s", path);
 
     return assetsLoadData(id, tmp_path, imageSize);
-=======
-    snprintf(tmp_path, sizeof(tmp_path)-1, "theme:/%s", path);
-
-    return assetsLoadFromTheme(id, tmp_path, imageSize);
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
 }
 
 void themeStartup(ThemePreset preset) {
@@ -168,19 +162,12 @@ void themeStartup(ThemePreset preset) {
                 .font = interuiregular14,
             },
 
-<<<<<<< HEAD
             //applet mode text//
             [ThemeLayoutId_AttentionText] = {
                 .visible = true,
                 .posType = true,
 				//Modded by ELY M. 
                 .posStart = {-103, 46 + 18},   ///was -32
-=======
-            [ThemeLayoutId_AttentionText] = {
-                .visible = true,
-                .posType = true,
-                .posStart = {-75, 46 + 18},   ///was -32
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
                 .font = interuimedium30,
             },
 
@@ -325,20 +312,14 @@ void themeStartup(ThemePreset preset) {
             [ThemeLayoutId_NetworkIcon] = {
                 .visible = true,
                 .posType = true,
-<<<<<<< HEAD
 				//Modded by ELY M. 
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
                 .posStart = {-63, 0 + 47 + 10 + 3},
             },
 
             [ThemeLayoutId_BatteryCharge] = {
                 .visible = true,
                 .posType = false,
-<<<<<<< HEAD
 				//Modded by ELY M. 
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
                 .posStart = {1180 - 10 - 24 - 8 - 63, 0 + 47 + 10 + 21 + 4},
                 .font = interuiregular14,
             },
@@ -346,20 +327,14 @@ void themeStartup(ThemePreset preset) {
             [ThemeLayoutId_BatteryIcon] = {
                 .visible = true,
                 .posType = false,
-<<<<<<< HEAD
 				//Modded by ELY M. 
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
                 .posStart = {1180 - 8 - 24 - 8 - 63, 0 + 47 + 10 + 6},
             },
 
             [ThemeLayoutId_ChargingIcon] = {
                 .visible = true,
                 .posType = false,
-<<<<<<< HEAD
 				//Modded by ELY M. 
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
                 .posStart = {1180 - 20 - 63, 0 + 47 + 10 + 6},
             },
 
@@ -373,10 +348,7 @@ void themeStartup(ThemePreset preset) {
             [ThemeLayoutId_Temperature] = {
                 .visible = true,
                 .posType = false,
-<<<<<<< HEAD
 				//Modded by ELY M. 
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
                 .posStart = {1180 + 4 - 63, 0 + 47 + 10 + + 21 + 6},
                 .font = interuiregular14,
             },
@@ -456,7 +428,6 @@ void themeStartup(ThemePreset preset) {
     const char *AText, *BText, *XText, *YText, *PText, *MText, *starOnText, *starOffText;
     bool logoColor_set = false;
     bool good_cfg = false;
-<<<<<<< HEAD
     #ifdef __SWITCH__
     bool is_romfs = false;
     #endif
@@ -499,27 +470,6 @@ void themeStartup(ThemePreset preset) {
                 free(cfg_buf);
             }
         }
-=======
-    bool is_romfs = false;
-
-    assetsClearTheme();
-
-    if(themePath[0]!=0) {
-        const char* cfg_path = themePath;
-        #ifdef __SWITCH__
-        const char* ext = getExtension(themePath);
-        if (strcasecmp(ext, ".romfs")==0) {
-            if (R_FAILED(romfsMountFromFsdev(themePath, 0, "theme")))
-                cfg_path = NULL;
-            else {
-                is_romfs = true;
-                cfg_path = "theme:/theme.cfg";
-            }
-        }
-        #endif
-
-        if (cfg_path) good_cfg = config_read_file(&cfg, cfg_path);
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
     }
 
     switch (preset) {
@@ -665,13 +615,8 @@ void themeStartup(ThemePreset preset) {
             layoutObjectFromSetting(config_setting_lookup(layout, "menuActiveEntryVersion"), &themeCurrent.layoutObjects[ThemeLayoutId_MenuActiveEntryVersion], false);
         }
 
-<<<<<<< HEAD
         if (is_archive) assets = config_lookup(&cfg, "assets");
         if (is_archive && assets) {
-=======
-        if (is_romfs) assets = config_lookup(&cfg, "assets");
-        if (is_romfs && assets) {
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
             assetObjectFromSetting(config_setting_lookup(assets, "battery_icon"), AssetId_battery_icon, NULL);
             assetObjectFromSetting(config_setting_lookup(assets, "charging_icon"), AssetId_charging_icon, NULL);
             assetObjectFromSetting(config_setting_lookup(assets, "folder_icon"), AssetId_folder_icon, &themeCurrent.layoutObjects[ThemeLayoutId_MenuActiveEntryIcon]);
@@ -709,10 +654,7 @@ void themeStartup(ThemePreset preset) {
 
     config_destroy(&cfg);
 
-<<<<<<< HEAD
     if (is_archive) PHYSFS_unmount(theme_archive_path);
-=======
->>>>>>> 67ac2995d03c9da9eca1d17aab41588017543d3b
     #ifdef __SWITCH__
     if (is_romfs) romfsUnmount("theme");
     #endif
