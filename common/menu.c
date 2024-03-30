@@ -6,6 +6,7 @@
 #include "switch/runtime/nxlink.h"
 #endif
 
+//Modded by ELY M.
 double menuTimer;
 
 char rootPathBase[PATH_MAX];
@@ -568,6 +569,8 @@ void drawNetwork(int tmpX, AssetId id) {
 u32 drawStatus() {
     bool netstatusFlag=0;
     bool temperatureFlag=0;
+	///Modded by ELY M.  //temp
+    s32 temperatureF=0;
     s32 temperature=0;
     AssetId id;
 
@@ -585,7 +588,6 @@ u32 drawStatus() {
     ThemeLayoutObject *layoutobj = &themeCurrent.layoutObjects[ThemeLayoutId_Status];
 
     u32 tmpX = GetTextXCoordinate(layoutobj->font, layoutobj->posStart[0], tmpstr, 'r');
-
     if (layoutobj->visible) DrawText(layoutobj->font, tmpX, layoutobj->posStart[1], themeCurrent.textColor, tmpstr);
 
     drawCharge();
@@ -593,7 +595,9 @@ u32 drawStatus() {
     if (statusGet(&netstatusFlag, &id, &temperatureFlag, &temperature)) {
         if (netstatusFlag) drawNetwork(tmpX, id);
         if (temperatureFlag) {
-            snprintf(tmpstr, sizeof(tmpstr)-1, "%d°C", temperature);
+			///Modded by ELY M.  //temp
+            temperatureF = (temperature * 9 / 5) + 32;
+            snprintf(tmpstr, sizeof(tmpstr)-1, "%d°F (%d°C)", temperatureF, temperature);
             DrawTextFromLayout(ThemeLayoutId_Temperature, themeCurrent.textColor, tmpstr);
         }
     }

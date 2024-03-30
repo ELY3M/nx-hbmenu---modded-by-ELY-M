@@ -46,7 +46,7 @@ ROMFS	:=	romfs
 
 DIST_PATH	:=	$(TARGET)_v$(APP_VERSION)
 
-APP_AUTHOR	:=	switchbrew
+APP_AUTHOR	:=	switchbrew - modded by ELY M.
 
 #---------------------------------------------------------------------------------
 # options for code generation

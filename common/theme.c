@@ -1,6 +1,7 @@
 #include "theme.h"
 #include <physfs.h>
 
+//Modded by ELY M.  
 theme_t themeCurrent;
 ThemePreset themeGlobalPreset;
 
@@ -161,10 +162,12 @@ void themeStartup(ThemePreset preset) {
                 .font = interuiregular14,
             },
 
+            //applet mode text//
             [ThemeLayoutId_AttentionText] = {
                 .visible = true,
                 .posType = true,
-                .posStart = {-32, 46 + 18},
+				//Modded by ELY M. 
+                .posStart = {-103, 46 + 18},   ///was -32
                 .font = interuimedium30,
             },
 
@@ -309,26 +312,30 @@ void themeStartup(ThemePreset preset) {
             [ThemeLayoutId_NetworkIcon] = {
                 .visible = true,
                 .posType = true,
-                .posStart = {0, 0 + 47 + 10 + 3},
+				//Modded by ELY M. 
+                .posStart = {-63, 0 + 47 + 10 + 3},
             },
 
             [ThemeLayoutId_BatteryCharge] = {
                 .visible = true,
                 .posType = false,
-                .posStart = {1180 - 10 - 24 - 8, 0 + 47 + 10 + 21 + 4},
+				//Modded by ELY M. 
+                .posStart = {1180 - 10 - 24 - 8 - 63, 0 + 47 + 10 + 21 + 4},
                 .font = interuiregular14,
             },
 
             [ThemeLayoutId_BatteryIcon] = {
                 .visible = true,
                 .posType = false,
-                .posStart = {1180 - 8 - 24 - 8, 0 + 47 + 10 + 6},
+				//Modded by ELY M. 
+                .posStart = {1180 - 8 - 24 - 8 - 63, 0 + 47 + 10 + 6},
             },
 
             [ThemeLayoutId_ChargingIcon] = {
                 .visible = true,
                 .posType = false,
-                .posStart = {1180 - 20, 0 + 47 + 10 + 6},
+				//Modded by ELY M. 
+                .posStart = {1180 - 20 - 63, 0 + 47 + 10 + 6},
             },
 
             [ThemeLayoutId_Status] = {
@@ -341,7 +348,8 @@ void themeStartup(ThemePreset preset) {
             [ThemeLayoutId_Temperature] = {
                 .visible = true,
                 .posType = false,
-                .posStart = {1180 + 4, 0 + 47 + 10 + 21 + 4},
+				//Modded by ELY M. 
+                .posStart = {1180 + 4 - 63, 0 + 47 + 10 + + 21 + 6},
                 .font = interuiregular14,
             },
 
