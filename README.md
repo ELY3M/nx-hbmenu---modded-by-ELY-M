@@ -3,7 +3,7 @@ See [Homebrew_Applications](https://switchbrew.org/wiki/Homebrew_Applications) f
 
 ### Elys Changes 
 * Temperature in F
-
+* added github actions to auto build the nro and publish the nro
 
 ### Download
 The latest release is available from the [releases](https://github.com/switchbrew/nx-hbmenu/releases/latest) page.
