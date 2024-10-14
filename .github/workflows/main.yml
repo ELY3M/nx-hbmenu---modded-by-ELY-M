@@ -18,6 +18,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set ownership
+        run: |
+          # this is to fix GIT not liking owner of the checkout dir
+          chown -R $(id -u):$(id -g) $PWD
+          
       - name: build
         run: make -j2
 
