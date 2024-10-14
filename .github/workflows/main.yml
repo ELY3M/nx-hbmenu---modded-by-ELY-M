@@ -24,7 +24,7 @@ jobs:
           chown -R $(id -u):$(id -g) $PWD
           
       - name: build
-        run: make -j2
+        run: make nx -j2
 
       - name: test
         run: ls -la
