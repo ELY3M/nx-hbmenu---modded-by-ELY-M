@@ -26,8 +26,8 @@ jobs:
       - name: build
         run: make nx -j2
 
-      - name: test
-        run: ls -la
+      - name: rename nro
+        run: mv nx-hbmenu---modded-by-ELY-M.nro hbmenu.nro
         
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -36,5 +36,5 @@ jobs:
           prerelease: false
           draft: false
           body: ${{ github.event.head_commit.message }}
-          files: fuck-u.nro
+          files: hbmenu.nro
           name: "Switch Release #${{ github.run_number }}"
