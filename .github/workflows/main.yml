@@ -1,0 +1,40 @@
+name: Build for switch
+
+on:
+  push:
+    branches:
+     - master
+  pull_request:
+
+jobs:
+  build:
+    name: Test build
+    runs-on: ubuntu-latest
+    container:
+      image: 'devkitpro/devkita64'
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Set ownership
+        run: |
+          # this is to fix GIT not liking owner of the checkout dir
+          chown -R $(id -u):$(id -g) $PWD
+          
+      - name: build
+        run: make nx -j2
+
+      - name: rename nro
+        run: mv nx-hbmenu---modded-by-ELY-M.nro hbmenu.nro
+        
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.run_number }}
+          prerelease: false
+          draft: false
+          body: ${{ github.event.head_commit.message }}
+          files: hbmenu.nro
+          name: "Switch Release #${{ github.run_number }}"
